@@ -1,6 +1,54 @@
+2002-04-23 16:04  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.16):
+
+	- Split up somewhat into functions.
+	
+	- Fixed bug that surfaced when running an empty test suite, or a suite with only
+	  'setup' and 'teardown' tests.
+	
+	- Fixed error reporting: now failures are reported for TEST_VERBOSE=1 as well as
+	  VERBOSE=1.
+	
+2002-04-23 16:01  Michael Granger <ged@FaerieMUD.org>
+
+	* t/08_emptysuite.t (1.1):
+
+	Initial commit.
+	
+2002-04-22 16:15  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.15, RELEASE_1_15):
+
+	- Fixed some X<> POD constructs that should have been L<> ones.
+	
+2002-04-22 16:14  Michael Granger <ged@FaerieMUD.org>
+
+	* README (1.3, RELEASE_1_15):
+
+	- Added longer description.
+	
+2002-04-15 13:54  Michael Granger <ged@FaerieMUD.org>
+
+	* t/06_skips.t (1.3, RELEASE_1_15, RELEASE_1_14):
+
+	- Added 'AutoskipFailedSetup' tests.
+	
+2002-04-15 13:54  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.14, RELEASE_1_14):
+
+	- Updated, added documentation
+	
+	- Changed AutoskipFailedSetup to a function, as it was rather incongruous as a
+	  method. The method style stills works, but it's deprecated.
+	
+	- Added code to allow 'setup' and 'teardown' cases to specify their coderefs
+	  with a 'func' key rather than 'test' for clarity.
+	
 2002-04-08 12:57  Michael Granger <ged@FaerieMUD.org>
 
-	* README (1.2):
+	* README (1.2, RELEASE_1_14, RELEASE_1_13):
 
 	- De-tabified.
 	
@@ -12,13 +60,13 @@
 	
 2002-04-08 12:50  Michael Granger <ged@FaerieMUD.org>
 
-	* t/05_asserts.t (1.4):
+	* t/05_asserts.t (1.4, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13):
 
 	- Modified error messages to reflect changes in assert().
 	
 2002-04-08 12:47  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/Test/SimpleUnit.pm (1.13):
+	* lib/Test/SimpleUnit.pm (1.13, RELEASE_1_13):
 
 	- Modified to pass "\n" as the last arg to die to remove the irrelevant 'at
 	  line...' message. When I have more time, I should add code to backtrace
@@ -28,18 +76,24 @@
 	
 2002-03-29 16:45  Michael Granger <ged@FaerieMUD.org>
 
-	* Makefile.PL (1.3, RELEASE_1_12):
+	* Makefile.PL (1.3, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
+	RELEASE_1_12):
 
 	- Fixed ci/tag target
 	
 2002-03-29 16:41  Michael Granger <ged@FaerieMUD.org>
 
 	* Makefile.PL (1.2), lib/Test/SimpleUnit.pm (1.12, RELEASE_1_12),
-	t/00_require.t (1.2, RELEASE_1_12), t/01_importAll.t (1.2,
-	RELEASE_1_12), t/02_importAsserts.t (1.3, RELEASE_1_12),
-	t/03_importTfuncs.t (1.2, RELEASE_1_12), t/04_importSkips.t (1.2,
-	RELEASE_1_12), t/05_asserts.t (1.3, RELEASE_1_12), t/06_skips.t
-	(1.2, RELEASE_1_12), t/07_setupteardown.t (1.2, RELEASE_1_12):
+	t/00_require.t (1.2, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
+	RELEASE_1_12), t/01_importAll.t (1.2, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/02_importAsserts.t (1.3,
+	RELEASE_1_15, RELEASE_1_14, RELEASE_1_13, RELEASE_1_12),
+	t/03_importTfuncs.t (1.2, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
+	RELEASE_1_12), t/04_importSkips.t (1.2, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/05_asserts.t (1.3, RELEASE_1_12),
+	t/06_skips.t (1.2, RELEASE_1_13, RELEASE_1_12),
+	t/07_setupteardown.t (1.2, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12):
 
 	- Renamed to Test::SimpleUnit
 	

@@ -118,8 +118,8 @@ use warnings qw{all};
 BEGIN {
 	### Versioning stuff and custom includes
 	use vars qw{$VERSION $RCSID};
-	$VERSION	= do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-	$RCSID	= q$Id: SimpleUnit.pm,v 1.15 2002/04/22 22:15:10 deveiant Exp $;
+	$VERSION	= do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+	$RCSID	= q$Id: SimpleUnit.pm,v 1.16 2002/04/23 22:04:34 deveiant Exp $;
 
 	### Export functions
 	use base qw{Exporter};
@@ -445,45 +445,67 @@ sub runTests {
 	my @testSuite = @_;
 
 	my (
+		$tests,
+		$setupFuncs,
+		$teardownFuncs,
+		@failures,
+	   );
+
+	# Split setup funcs, teardown funcs, and tests into three arrayrefs
+	( $setupFuncs, $tests, $teardownFuncs ) = _prepSuite( @testSuite );
+
+	# If we have non-setup/teardown tests, run them
+	if ( @$tests ) {
+		@failures = _runTests( $setupFuncs, $tests, $teardownFuncs );
+
+		# If there were any failures
+		if ( @failures && ($ENV{VERBOSE} || $ENV{TEST_VERBOSE}) ) {
+			print STDERR "Failures: \n", join( "\n", @failures ), "\n\n";
+		}
+	}
+
+	# Otherwise, just skip everything
+	else {
+		print "1..1\n";
+		print "ok # skip: Empty test suite.\n";
+	}
+
+	return 1;
+}
+
+
+### (PROTECTED) FUNCTION: _runTests( \@setupFuncs, \@tests, \@teardownFuncs )
+### Run the specified I<tests>, running any I<setupFuncs> before each one, and
+### any I<teardownFuncs> after each one.
+sub _runTests {
+	my ( $setupFuncs, $tests, $teardownFuncs ) = @_;
+
+	my (
 		$runningUnderTestHarness,
 		$testCount,
 		@failures,
-		@setupFuncs,
-		@teardownFuncs,
 		$skip,
 	   );
 
 	$runningUnderTestHarness = 1 if $ENV{HARNESS_ACTIVE};
 
-	# Scan the test suite for setup and teardown, splicing them off into the
-	# appropriate array if found
-  SCAN: for ( my $i = 0 ; $i <= $#testSuite ; $i++ ) {
-		if ( $testSuite[$i]->{name} =~ m{^set[^a-z]?up$}i ) {
-			push @setupFuncs, splice( @testSuite, $i, 1 );
-			redo SCAN;
-		}
-
-		elsif ( $testSuite[$i]->{name} =~ m{^tear[^a-z]?down$}i ) {
-			push @teardownFuncs, splice( @testSuite, $i, 1 );
-			redo SCAN;
-		}
-	}
-
 	# Print the preamble and intialize some vars
-	printf "1..%d\n", scalar @testSuite;
+	printf "1..%d\n", scalar @$tests;
 	$testCount = 0;
 	@failures = ();
 	$skip = '';
 
+	# If neither the VERBOSE nor TEST_VERBOSE vars were set, don't show STDERR
 	unless ( $ENV{VERBOSE} || $ENV{TEST_VERBOSE} ) {
 		open( STDERR, "+>/dev/null" );
 	}
 
-  TEST: foreach my $test ( @testSuite ) {
+
+  TEST: foreach my $test ( @$tests ) {
 
 		# Run any setup functions we have
 		unless ( $skip ) {
-			foreach my $func ( @setupFuncs ) {
+			foreach my $func ( @$setupFuncs ) {
 				if ( exists $func->{func} ) {
 					eval { $func->{func}( $test ) };
 				} else {
@@ -529,30 +551,51 @@ sub runTests {
 		print "ok\n";
 
 		# Run teardown functions
-		foreach my $func ( @teardownFuncs ) {
+		foreach my $func ( @$teardownFuncs ) {
 			if ( exists $func->{func} ) {
 				eval { $func->{func}( $test ) };
 			} else {
 				eval { $func->{test}( $test ) };
 			}
 
-			if ( $@ ) {
-				print STDERR "Warning: Setup failed: $@\n";
-				print( "ok # skip: Setup failed ($@)\n" ), next TEST
-					if $AutoskipFailedSetup;
-			}
+			print STDERR "Warning: Teardown failed: $@\n" if $@;
 		}
 	}
 
 	print "$succeedCount out of $assertCount assertions passed.\n"
 		unless $runningUnderTestHarness;
 
-	if ( @failures ) {
-		print STDERR "Failures: \n", join( "\n", @failures ), "\n\n" if $ENV{VERBOSE};
+	return @failures;
+}
+
+
+### (PROTECTED) FUNCTION: _prepSuite( @tests )
+### Split the specified array of test hashrefs into three arrays: setupFuncs,
+### tests, and teardownFuncs. Return references to the three arrays.
+sub _prepSuite {
+	my @testSuite = @_;
+
+	my ( @setupFuncs, @teardownFuncs );
+
+	# Scan the test suite for setup and teardown, splicing them off into the
+	# appropriate array if found
+  SCAN: for ( my $i = 0 ; $i <= $#testSuite ; $i++ ) {
+		last SCAN unless @testSuite;
+
+		if ( $testSuite[$i]->{name} =~ m{^set[^a-z]?up$}i ) {
+			push @setupFuncs, splice( @testSuite, $i, 1 );
+			redo SCAN;
+		}
+
+		elsif ( $testSuite[$i]->{name} =~ m{^tear[^a-z]?down$}i ) {
+			push @teardownFuncs, splice( @testSuite, $i, 1 );
+			redo SCAN;
+		}
 	}
 
-	return 1;
+	return ( \@setupFuncs, \@testSuite, \@teardownFuncs );
 }
+
 
 
 1;
