@@ -12,3 +12,4 @@ t/05_asserts.t
 t/06_skips.t
 t/07_setupteardown.t
 t/08_emptysuite.t
+t/09_bugs.t

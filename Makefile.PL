@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #	Perl Makefile for Test::SimpleUnit
-#	$Id: Makefile.PL,v 1.3 2002/03/29 23:45:29 deveiant Exp $
+#	$Id: Makefile.PL,v 1.4 2002/05/14 03:02:03 deveiant Exp $
 #
 #	Invoke with 'perl Makefile.PL'
 #
@@ -18,6 +18,9 @@ WriteMakefile(
 	PREREQ_PM				=> {
 		Scalar::Util	=> 0,
 		Carp			=> 0,
+		IO::Handle		=> 0,
+		Data::Dumper	=> 0,
+		constant		=> 0,
 	},
 	dist					=> {
 		CI						=> "cvs commit",

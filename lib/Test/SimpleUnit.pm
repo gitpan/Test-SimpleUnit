@@ -222,8 +222,8 @@ use warnings qw{all};
 BEGIN {
 	### Versioning stuff and custom includes
 	use vars qw{$VERSION $RCSID};
-	$VERSION	= do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-	$RCSID	= q$Id: SimpleUnit.pm,v 1.17 2002/04/25 20:50:27 deveiant Exp $;
+	$VERSION	= do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+	$RCSID	= q$Id: SimpleUnit.pm,v 1.18 2002/05/14 03:01:14 deveiant Exp $;
 
 	### Export functions
 	use base qw{Exporter};
@@ -261,23 +261,29 @@ BEGIN {
 		testFunctions	=> [$EXPORT_OK[ $#EXPORT_OK ]],
 	   );
 
+	# More readable constants
 	use constant TRUE	=> 1;
 	use constant FALSE	=> 0;
 
+	# Load other modules
 	use Data::Dumper qw{};
-
 	use Scalar::Util qw{blessed};
-	use Carp qw{confess};
+	use IO::Handle qw{};
+	use Carp qw{croak confess};
 }
 
 
 #####################################################################
 ###	C L A S S   V A R I A B L E S
 #####################################################################
-our ( $AutoskipFailedSetup, $Debug );
+our ( $AutoskipFailedSetup, $Debug, $DefaultOutputHandle, $OutputHandle, @Counters );
 
 $AutoskipFailedSetup = FALSE;
+$Debug = FALSE;
+$DefaultOutputHandle = IO::Handle->new_from_fd( fileno STDOUT, 'w' );
+$OutputHandle = $DefaultOutputHandle;
 
+@Counters = ();
 
 
 ### FUNCTION: AutoskipFailedSetup( $trueOrFalse )
@@ -298,6 +304,61 @@ sub Debug {
 	return $Debug;
 }
 
+
+### FUNCTION: OutputHandle( $handle )
+### Set the I<handle> that will be used to output test progress
+### information. This can be used to run tests under Test::Harness without
+### influencing the test result, such as when invoking runTests() from within an
+### assertion. It defaults to STDOUT, which will be what it is restored to if it
+### is called with no argument. The argument is tested for support for the
+### 'print', 'flush', and 'printf' methods, and dies if it does not support
+### them. This function is mostly to support self-testing.
+sub OutputHandle {
+	my $ofh = shift || $DefaultOutputHandle;
+	croak( "Invalid output handle for test output ($OutputHandle)" )
+		unless UNIVERSAL::can($ofh, 'print')
+			&& UNIVERSAL::can($ofh, 'flush')
+			&& UNIVERSAL::can($ofh, 'printf');
+	$ofh->autoflush;
+	$OutputHandle = $ofh;
+}
+
+
+### (PRIVATE) FUNCTION: _PushAssertionCounter()
+### Add a pair of assertion counters to the stack. Assertion counters are used
+### to count assertion runs/successes, and this adds a level in case of
+### recursive runTests() calls.
+sub _PushAssertionCounter {
+	unshift @Counters, { run => 0, succeed => 0 };
+}
+
+
+### (PRIVATE) FUNCTION: _CountAssertion()
+### Add 1 to the count of assertions run in the current counter frame.
+sub _CountAssertion {
+	croak( "No counter frames in the stack" )
+		unless @Counters;
+	$Counters[ 0 ]{run}++;
+}
+
+
+### (PRIVATE) FUNCTION: _CountSuccess()
+### Add 1 to the count of successful assertions in the current counter frame.
+sub _CountSuccess {
+	croak( "No counter frames in the stack" )
+		unless @Counters;
+	$Counters[ 0 ]{succeed}++;
+}
+
+### (PRIVATE) FUNCTION: _PopAssertionCounter()
+### Remove the current assertion counter, and return a list of the number of
+### assertions run, and the number of assertions which succeeded.
+sub _PopAssertionCounter {
+	croak( "No counter frames in the stack" )
+		unless @Counters;
+	my $counterFrame = shift @Counters;
+	return( $counterFrame->{run}, $counterFrame->{succeed} );
+}
 
 
 #####################################################################
@@ -331,7 +392,6 @@ sub runTests;
 ###############################################################################
 ###	T E S T I N G   F U N C T I O N S
 ###############################################################################
-our ( $assertCount, $succeedCount ) = (0) x 2;
 
 ### (ASSERTION) FUNCTION: assert( $value[, $failureMessage] )
 ### Die with a failure message if the specified value is not true. If the
@@ -339,10 +399,10 @@ our ( $assertCount, $succeedCount ) = (0) x 2;
 sub assert ($;$) {
 	my ( $assert, $message ) = @_;
 
-	$assertCount++;
+	Test::SimpleUnit::_CountAssertion();
 	$message ||= defined $assert ? "$assert" : "(undef)";
 	die( $message, "\n" ) unless $assert;
-	$succeedCount++;
+	Test::SimpleUnit::_CountSuccess();
 
 	return 1;
 }
@@ -521,7 +581,7 @@ sub assertKindOf ($$;$) {
 ### instead.
 sub fail (;$) {
 	my $message = shift || "Failed (no reason given)";
-	$assertCount++;
+	Test::SimpleUnit::_CountAssertion();
 	die( $message );
 }
 
@@ -586,8 +646,8 @@ sub runTests {
 
 	# Otherwise, just skip everything
 	else {
-		print "1..1\n";
-		print "ok # skip: Empty test suite.\n";
+		$OutputHandle->print( "1..1\n" );
+		$OutputHandle->print( "ok # skip: Empty test suite.\n" );
 	}
 
 	return 1;
@@ -608,10 +668,17 @@ sub _runTests {
 		$func,
 	   );
 
+	Test::SimpleUnit::_PushAssertionCounter();
 	$runningUnderTestHarness = 1 if $ENV{HARNESS_ACTIVE};
 
 	# Print the preamble and intialize some vars
-	printf "1..%d\n", scalar @$tests;
+	if ( $Debug ) {
+		print STDERR Data::Dumper->Dumpxs( [$setupFuncs,$tests,$teardownFuncs],
+										   [qw{setupFuncs tests teardownFuncs}] ), "\n";
+		print STDERR "Scalar tests = ", scalar @$tests, "\n";
+	}
+	$OutputHandle->printf( "1..%d\n", scalar @$tests );
+	$OutputHandle->flush;
 	$testCount = 0;
 	@failures = ();
 	$skip = '';
@@ -645,41 +712,55 @@ sub _runTests {
 			if ( $@ ) {
 				# Handle an explicit skipAll in a setup function
 				if ( ref $@ eq 'SKIPALL' ) {
-					print "ok # skip: ${$@}\n";
+					$OutputHandle->print( "ok # skip: ${$@}\n" );
 					$skip = ${$@};
 					next TEST;
 				} else {
 					print STDERR "Warning: Setup failed: $@\n";
-					print( "ok # skip: Setup failed ($@)\n" ), $skip = ${$@}
+					$OutputHandle->print( "ok # skip: Setup failed ($@)\n" ), $skip = ${$@}
 						if $AutoskipFailedSetup;
 				}
 			}
 		}
 
 		# Print the test header and skip if we're skipping
-		print $testCount, ". $test->{name}: " unless $runningUnderTestHarness;
-		print( "ok # skip $skip\n" ), next TEST if $skip;
+		$OutputHandle->print( $testCount, ". $test->{name}: " ) unless $runningUnderTestHarness;
+		$OutputHandle->print( "ok # skip $skip\n" ), next TEST if $skip;
+
+		# If the test doesn't have a 'test' key, or its not a coderef, skip it
+		$OutputHandle->print( "ok # skip No test function\n" ), next TEST
+			unless exists $test->{test};
+		$OutputHandle->print( "ok # skip Test function is not a coderef\n" ), next TEST
+			unless ref $test->{test} eq 'CODE';
+
+		if ( $Debug ) {
+			print STDERR "Output handle before eval = fd ", $OutputHandle->fileno, "\n";
+		}
 
 		# Run the actual test
 		eval {
 			$test->{test}();
 		};
 
+		if ( $Debug ) {
+			print STDERR "Output handle after eval = fd ", $OutputHandle->fileno, "\n";
+		}
+
 		# If there was an exception, handle it. It's either a 'skip the rest',
 		# 'skip this one', or a bonafide error
 		if ( $@ ) {
 			if ( ref $@ eq 'SKIPONE' ) {
-				print "ok # skip: ${$@}\n";
+				$OutputHandle->print( "ok # skip: ${$@}\n" );
 			} elsif ( ref $@ eq 'SKIPALL' ) {
-				print "ok # skip: ${$@}\n";
+				$OutputHandle->print( "ok # skip: ${$@}\n" );
 				$skip = ${$@};
 			} else {
 				push @failures, "$test->{name}: $@";
+				$OutputHandle->print( "not ok # $@\n" );
 			}
-
-			next TEST;
+		} else {
+			$OutputHandle->print( "ok\n" );
 		}
-		print "ok\n";
 
 		# Run the current teardown function, if any
 		unless ( $skip || ! @$teardownFuncs || $teardownFuncs->[0]{index} > $testCount - 1 ) {
@@ -700,7 +781,11 @@ sub _runTests {
 		}
 	}
 
-	print "$succeedCount out of $assertCount assertions passed.\n"
+	my ( $assertCount, $succeedCount ) = Test::SimpleUnit::_PopAssertionCounter();
+	if ( $Debug ) {
+		print STDERR "Assertion counter came back: $succeedCount/$assertCount\n";
+	}
+	$OutputHandle->print( "$succeedCount out of $assertCount assertions passed.\n" )
 		unless $runningUnderTestHarness;
 
 	return @failures;

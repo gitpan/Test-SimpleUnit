@@ -1,12 +1,33 @@
+2002-05-13 21:02  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.4):
+
+	- Added some dependencies to the require list.
+	
+2002-05-13 21:01  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.18):
+
+	- Added functions/package variables to support switching the test output IO
+	  handle to something different for the purposes of self-testing.
+	
+	- Modified assertion counter code to support recursive calls to runTests().
+	
+2002-05-13 20:59  Michael Granger <ged@FaerieMUD.org>
+
+	* t/09_bugs.t (1.1):
+
+	- Initial commit.
+	
 2002-04-25 14:53  Michael Granger <ged@FaerieMUD.org>
 
-	* t/07_setupteardown.t (1.3):
+	* t/07_setupteardown.t (1.3, RELEASE_1_17):
 
 	- Modified to test the setup/teardown superseding rules.
 	
 2002-04-25 14:52  Michael Granger <ged@FaerieMUD.org>
 
-	* README (1.4):
+	* README (1.4, RELEASE_1_17):
 
 	- Cleaned up to reflect the changes made to the module.
 	
@@ -16,7 +37,7 @@
 	
 2002-04-25 14:50  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/Test/SimpleUnit.pm (1.17):
+	* lib/Test/SimpleUnit.pm (1.17, RELEASE_1_17):
 
 	- Cleaned up and corrected documentation.
 	
@@ -40,7 +61,7 @@
 	
 2002-04-23 16:01  Michael Granger <ged@FaerieMUD.org>
 
-	* t/08_emptysuite.t (1.1, RELEASE_1_16):
+	* t/08_emptysuite.t (1.1, RELEASE_1_17, RELEASE_1_16):
 
 	Initial commit.
 	
@@ -58,7 +79,8 @@
 	
 2002-04-15 13:54  Michael Granger <ged@FaerieMUD.org>
 
-	* t/06_skips.t (1.3, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14):
+	* t/06_skips.t (1.3, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
+	RELEASE_1_14):
 
 	- Added 'AutoskipFailedSetup' tests.
 	
@@ -88,8 +110,8 @@
 	
 2002-04-08 12:50  Michael Granger <ged@FaerieMUD.org>
 
-	* t/05_asserts.t (1.4, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
-	RELEASE_1_13):
+	* t/05_asserts.t (1.4, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
+	RELEASE_1_14, RELEASE_1_13):
 
 	- Modified error messages to reflect changes in assert().
 	
@@ -105,25 +127,27 @@
 	
 2002-03-29 16:45  Michael Granger <ged@FaerieMUD.org>
 
-	* Makefile.PL (1.3, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
-	RELEASE_1_13, RELEASE_1_12):
+	* Makefile.PL (1.3, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
+	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12):
 
 	- Fixed ci/tag target
 	
 2002-03-29 16:41  Michael Granger <ged@FaerieMUD.org>
 
 	* Makefile.PL (1.2), lib/Test/SimpleUnit.pm (1.12, RELEASE_1_12),
-	t/00_require.t (1.2, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
-	RELEASE_1_13, RELEASE_1_12), t/01_importAll.t (1.2, RELEASE_1_16,
-	RELEASE_1_15, RELEASE_1_14, RELEASE_1_13, RELEASE_1_12),
-	t/02_importAsserts.t (1.3, RELEASE_1_16, RELEASE_1_15,
-	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12), t/03_importTfuncs.t
-	(1.2, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
-	RELEASE_1_12), t/04_importSkips.t (1.2, RELEASE_1_16, RELEASE_1_15,
-	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12), t/05_asserts.t (1.3,
-	RELEASE_1_12), t/06_skips.t (1.2, RELEASE_1_13, RELEASE_1_12),
-	t/07_setupteardown.t (1.2, RELEASE_1_16, RELEASE_1_15,
-	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12):
+	t/00_require.t (1.2, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
+	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12), t/01_importAll.t (1.2,
+	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/02_importAsserts.t (1.3,
+	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/03_importTfuncs.t (1.2,
+	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/04_importSkips.t (1.2, RELEASE_1_17,
+	RELEASE_1_16, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
+	RELEASE_1_12), t/05_asserts.t (1.3, RELEASE_1_12), t/06_skips.t
+	(1.2, RELEASE_1_13, RELEASE_1_12), t/07_setupteardown.t (1.2,
+	RELEASE_1_16, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
+	RELEASE_1_12):
 
 	- Renamed to Test::SimpleUnit
 	
