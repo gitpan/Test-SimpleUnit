@@ -17,66 +17,80 @@ run either standalone or under Test::Harness.
 
 Testing
 
-Testing in Test::SimpleUnit is done by running a test suite, either via 'make
-test', which uses the Test::Harness 'test' target written by
-ExtUtils::MakeMaker, or as a standalone script.
+  Testing in Test::SimpleUnit is done by running a test suite, either via 'make
+  test', which uses the Test::Harness 'test' target written by
+  ExtUtils::MakeMaker, or as a standalone script.
 
-If errors occur while running tests via the 'make test' method, you can get more
-verbose output about the test run by adding "TEST_VERBOSE=1" to the end of the
-"make" invocation:
+  If errors occur while running tests via the 'make test' method, you can get
+  more verbose output about the test run by adding "TEST_VERBOSE=1" to the end
+  of the "make" invocation:
 
-  $ make test TEST_VERBOSE=1
+	$ make test TEST_VERBOSE=1
 
-If you want to display only the messages caused by failing assertions, you can
-add a "VERBOSE=1" to the end of the "make" invocation instead:
+  If you want to display only the messages caused by failing assertions, you can
+  add a "VERBOSE=1" to the end of the "make" invocation instead:
 
-  $ make test VERBOSE=1
+	$ make test VERBOSE=1
 
 
 Test Suites
 
-A test suite is one or more test cases, each of which tests a specific unit of
-functionality.
+  A test suite is one or more test cases, each of which tests a specific unit of
+  functionality.
 
 
 Test Cases
 
-A test case is a unit of testing which consists of one or more tests, combined
-with setup and teardown functions that make the necessary preparations for
-testing.
+  A test case is a unit of testing which consists of one or more tests, combined
+  with setup and teardown functions that make the necessary preparations for
+  testing.
 
-You may wish to split test cases up into separate files under a "t/" directory
-so they will run under a Test::Harness-style "make test".
+  You may wish to split test cases up into separate files under a "t/" directory
+  so they will run under a Test::Harness-style "make test".
 
 
 Tests
 
-A test is a hashref which contains two key-value pairs: a name key with the name
-of the test as the value, and a code reference under a test key:
+  A test is a hashref which contains two key-value pairs: a name key with the
+  name of the test as the value, and a code reference under a test key:
 
-  {
-	name => 'This is the name of the test',
-	test => sub { ...testing code... }
-  }
+	{
+	  name => 'This is the name of the test',
+	  test => sub { ...testing code... }
+	}
 
-Each test's "test" function can make one or more assertions by using the
-Assertion Functions provided, or can indicate that it or any trailing tests in
-the same test case should be skipped by calling one of the provided Skip
-Functions.
+  Each test's "test" function can make one or more assertions by using the
+  Assertion Functions provided, or can indicate that it or any trailing tests in
+  the same test case should be skipped by calling one of the provided Skip
+  Functions.
 
 
 Setup and Teardown Functions
 
-If a test has the name 'setup' or 'teardown', it is run before or after each
-test that follows it, respectively. A second or succeeding setup or teardown
-function will supersede any function of the same type which preceded it. This
-allows a test designer to change the setup function as the tests progress. See
-the section for an example of how to use this.
+  If a test has the name 'setup' or 'teardown', it is run before or after each
+  test that follows it, respectively. A second or succeeding setup or teardown
+  function will supersede any function of the same type which preceded it. This
+  allows a test designer to change the setup function as the tests progress. See
+  the EXAMPLE section for an example of how to use this.
 
-The code reference value within a setup or teardown test case can optionally be
-named "func" instead of "test" for clarity. If there are both "func" and "test"
-key-value pairs in a setup or teardown case, the "test" pair is silently
-ignored.
+  If a test is preceeded by multiple new setup/teardown functions, the last one
+  to be specified is kept, and any others are discarded after being executed
+  once. This allows one to specify one-time setup and/or teardown functions at a
+  given point of testing.
+
+  The code reference value within a *setup* or *teardown* test case can
+  optionally be named "func" instead of "test" for clarity. If there are both
+  "func" and "test" key-value pairs in a *setup* or *teardown* case, the "test"
+  pair is silently ignored.
+
+
+Saving Test Data
+
+  If the test suite requires configuration, or some other data which should
+  persist between test cases, it can be dumped via Data::Dumper to a file with
+  the saveTestData() function. In succeeding tests, it can be reloaded using the
+  loadTestData() function.
+
 
 
 Example
@@ -132,6 +146,15 @@ Example
         },
       },
 
+      # One-time setup function -- overrides the previous setup, but is
+      # immediately discarded after executing once.
+      {
+        name => 'setup',
+        func => sub {
+                MyClass::prepNetwork();
+        },
+      },
+
       # Test the connect() and disconnect() methods
       {
         name => 'connect() and disconnect()',
@@ -173,9 +196,6 @@ Example
 Caveats
 -------
 
-*IMPORTANT*: This is an *beta* release. I have used it extensively for various
-projects, but your mileage may vary.
-
 I would greatly appreciate feedback on any aspect of this software. Suggestions,
 feature requests, questions, design critiques, and bug reports are most
 welcome. Relevant patches are particularly helpful. I may be reached at
@@ -194,7 +214,7 @@ Installation
 
 == Legal
 
-This module is Open Source Software which is Copyright (c) 2001,2002 by The
+This module is Open Source Software which is Copyright (c) 1999-2003 by The
 FaerieMUD Consortium.
 
 You may use, modify, and/or redistribute this software under the terms of either
@@ -209,7 +229,7 @@ INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 FITNESS FOR A PARTICULAR PURPOSE.
 
 
-Rev: $Id: README,v 1.4 2002/04/25 20:52:49 deveiant Exp $
+Rev: $Id: README,v 1.5 2003/01/15 21:48:39 deveiant Exp $
 
 
 

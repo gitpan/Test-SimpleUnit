@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #		Test script for Test::SimpleUnit
-#		$Id: 07_setupteardown.t,v 1.3 2002/04/25 20:53:27 deveiant Exp $
+#		$Id: 15_setupteardown.t,v 1.4 2003/01/15 20:48:07 deveiant Exp $
 #
 #		Before `make install' is performed this script should be runnable with
 #		`make test'. After `make install' it should work as `perl 07_setupteardown.t'
@@ -74,10 +74,10 @@ my @testSuite = (
 	},
 
 
-  ### Ignored setup collision
+  ### Assure all setups run at least once
 
 	# Override the second setup with this, the third one, but then clobber this
-	# one with a fourth. This one should never be run.
+	# one with a fourth. This one should only be run once.
 	{
 		name => 'setup',
 		test => sub {
@@ -93,15 +93,27 @@ my @testSuite = (
 		},
 	},
 
-	# Test to be sure the first has now run once, the second twice, the third no
-	# times, and the fourth one once.
+	# Test to be sure the first has now run once, the second twice, the third
+	# once, and the fourth one once.
 	{
-		name => 'test third and fourth setup',
+		name => 'test third and fourth setup (1st run)',
 		test => sub {
 			assertEquals 1, $setupRuns{first};
 			assertEquals 2, $setupRuns{second};
-			assertNot exists $setupRuns{third};
+			assertEquals 1, $setupRuns{third};
 			assertEquals 1, $setupRuns{fourth};
+		},
+	},
+
+	# Test again to be sure the first has now run once, the second twice, the
+	# third still only once, and the fourth two times.
+	{
+		name => 'test third and fourth setup (2nd run)',
+		test => sub {
+			assertEquals 1, $setupRuns{first};
+			assertEquals 2, $setupRuns{second};
+			assertEquals 1, $setupRuns{third};
+			assertEquals 2, $setupRuns{fourth};
 		},
 	},
 
@@ -163,10 +175,10 @@ my @testSuite = (
 
 
 
-  ### Ignored teardown collision
+  ### Assure all teardowns run at least once
 
 	# Override the second teardown with this, the third one, but then clobber this
-	# one with a fourth. This one should never be run.
+	# one with a fourth. This one should then only be run once.
 	{
 		name => 'teardown',
 		test => sub {
@@ -188,15 +200,27 @@ my @testSuite = (
 		test => sub { 1 },
 	},
 
-	# Test to be sure the first has now run once, the second twice, the third no
-	# times, and the fourth one once.
+	# Test to be sure the first has now run once, the second twice, and the
+	# third and fourth once each.
 	{
-		name => 'test third and fourth teardown',
+		name => 'test third and fourth teardown (1st run)',
 		test => sub {
 			assertEquals 2, $teardownRuns{first};
 			assertEquals 2, $teardownRuns{second};
-			assertNot exists $teardownRuns{third};
+			assertEquals 1, $teardownRuns{third};
 			assertEquals 1, $teardownRuns{fourth};
+		},
+	},
+
+	# Now make sure the third test has still only run once, but the fourth
+	# should have run a second time.
+	{
+		name => 'test third and fourth teardown (2nd run)',
+		test => sub {
+			assertEquals 2, $teardownRuns{first};
+			assertEquals 2, $teardownRuns{second};
+			assertEquals 1, $teardownRuns{third};
+			assertEquals 2, $teardownRuns{fourth};
 		},
 	},
 

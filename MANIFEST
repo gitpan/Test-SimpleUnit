@@ -8,8 +8,10 @@ t/01_importAll.t
 t/02_importAsserts.t
 t/03_importTfuncs.t
 t/04_importSkips.t
-t/05_asserts.t
-t/06_skips.t
-t/07_setupteardown.t
-t/08_emptysuite.t
-t/09_bugs.t
+t/05_importTestData.t
+t/10_asserts.t
+t/11_skips.t
+t/12_testdata.t
+t/15_setupteardown.t
+t/20_emptysuite.t
+t/30_bugs.t

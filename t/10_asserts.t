@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #		Test script for Test::SimpleUnit (import functions)
-#		$Id: 05_asserts.t,v 1.4 2002/04/08 18:50:24 deveiant Exp $
+#		$Id: 10_asserts.t,v 1.4 2002/04/08 18:50:24 deveiant Exp $
 #
 #		Before `make install' is performed this script should be runnable with
 #		`make test'. After `make install' it should work as `perl t/01_import.t'

@@ -1,12 +1,69 @@
+2003-01-15 13:48  Michael Granger <ged@FaerieMUD.org>
+
+	* t/15_setupteardown.t (1.4):
+
+	- Added/refined tests to match refined setup/teardown behaviour.
+	
+2003-01-15 13:47  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.5):
+
+	- Converted to use ExtUtils::AutoInstall.
+	
+2003-01-15 13:46  Michael Granger <ged@FaerieMUD.org>
+
+	* t/: 05_importTestData.t (1.1), 12_testdata.t (1.1):
+
+	Initial commit.
+	
+2003-01-15 12:58  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.21):
+
+	- Removed leftover conflict section.
+	
+2003-01-15 12:48  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.20):
+
+	- Added 'AutoskipFailedTeardown' global and accessors.
+	
+	- Added loadTestData() and saveTestData() functions and ':testdata' export flag
+	
+	- Modified comparison assertions to use Data::Compare.
+	
+	- Added functions/data to allow modification of output handle.
+	
+	- Generalized assertion-bookkeeping into functions.
+	
+	- Handled undefined values more cleanly in assertion messages.
+	
+	- Added ability to stack setup/teardown functions for one-time setup or
+	  teardowns.
+	
+2002-06-24 16:28  Michael Granger <ged@FaerieMUD.org>
+
+	* t/: 05_asserts.t (1.5), 06_skips.t (1.4), 07_setupteardown.t
+	(1.4), 08_emptysuite.t (1.2), 09_bugs.t (1.2):
+
+	'Updated'
+	
+2002-05-14 17:39  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.19):
+
+	- Cleaned up handling of undef values in default error messages for
+	  assertKindOf() and assertInstanceOf().
+	
 2002-05-13 21:02  Michael Granger <ged@FaerieMUD.org>
 
-	* Makefile.PL (1.4):
+	* Makefile.PL (1.4, RELEASE_1_18):
 
 	- Added some dependencies to the require list.
 	
 2002-05-13 21:01  Michael Granger <ged@FaerieMUD.org>
 
-	* lib/Test/SimpleUnit.pm (1.18):
+	* lib/Test/SimpleUnit.pm (1.18, RELEASE_1_18):
 
 	- Added functions/package variables to support switching the test output IO
 	  handle to something different for the purposes of self-testing.
@@ -15,19 +72,20 @@
 	
 2002-05-13 20:59  Michael Granger <ged@FaerieMUD.org>
 
-	* t/09_bugs.t (1.1):
+	* t/: 09_bugs.t (1.1), 30_bugs.t (1.1) (utags: RELEASE_1_18):
 
 	- Initial commit.
 	
 2002-04-25 14:53  Michael Granger <ged@FaerieMUD.org>
 
-	* t/07_setupteardown.t (1.3, RELEASE_1_17):
+	* t/: 07_setupteardown.t (1.3), 15_setupteardown.t (1.3) (utags:
+	RELEASE_1_18, RELEASE_1_17):
 
 	- Modified to test the setup/teardown superseding rules.
 	
 2002-04-25 14:52  Michael Granger <ged@FaerieMUD.org>
 
-	* README (1.4, RELEASE_1_17):
+	* README (1.4, RELEASE_1_18, RELEASE_1_17):
 
 	- Cleaned up to reflect the changes made to the module.
 	
@@ -61,7 +119,8 @@
 	
 2002-04-23 16:01  Michael Granger <ged@FaerieMUD.org>
 
-	* t/08_emptysuite.t (1.1, RELEASE_1_17, RELEASE_1_16):
+	* t/: 08_emptysuite.t (1.1), 20_emptysuite.t (1.1) (utags:
+	RELEASE_1_18, RELEASE_1_17, RELEASE_1_16):
 
 	Initial commit.
 	
@@ -79,8 +138,8 @@
 	
 2002-04-15 13:54  Michael Granger <ged@FaerieMUD.org>
 
-	* t/06_skips.t (1.3, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
-	RELEASE_1_14):
+	* t/: 06_skips.t (1.3), 11_skips.t (1.3) (utags: RELEASE_1_18,
+	RELEASE_1_15, RELEASE_1_14, RELEASE_1_17, RELEASE_1_16):
 
 	- Added 'AutoskipFailedSetup' tests.
 	
@@ -110,8 +169,9 @@
 	
 2002-04-08 12:50  Michael Granger <ged@FaerieMUD.org>
 
-	* t/05_asserts.t (1.4, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
-	RELEASE_1_14, RELEASE_1_13):
+	* t/: 05_asserts.t (1.4), 10_asserts.t (1.4) (utags: RELEASE_1_18,
+	RELEASE_1_15, RELEASE_1_14, RELEASE_1_17, RELEASE_1_16,
+	RELEASE_1_13):
 
 	- Modified error messages to reflect changes in assert().
 	
@@ -135,19 +195,23 @@
 2002-03-29 16:41  Michael Granger <ged@FaerieMUD.org>
 
 	* Makefile.PL (1.2), lib/Test/SimpleUnit.pm (1.12, RELEASE_1_12),
-	t/00_require.t (1.2, RELEASE_1_17, RELEASE_1_16, RELEASE_1_15,
-	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12), t/01_importAll.t (1.2,
-	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
-	RELEASE_1_13, RELEASE_1_12), t/02_importAsserts.t (1.3,
-	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
-	RELEASE_1_13, RELEASE_1_12), t/03_importTfuncs.t (1.2,
-	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
-	RELEASE_1_13, RELEASE_1_12), t/04_importSkips.t (1.2, RELEASE_1_17,
+	t/00_require.t (1.2, RELEASE_1_18, RELEASE_1_17, RELEASE_1_16,
+	RELEASE_1_15, RELEASE_1_14, RELEASE_1_13, RELEASE_1_12),
+	t/01_importAll.t (1.2, RELEASE_1_18, RELEASE_1_17, RELEASE_1_16,
+	RELEASE_1_15, RELEASE_1_14, RELEASE_1_13, RELEASE_1_12),
+	t/02_importAsserts.t (1.3, RELEASE_1_18, RELEASE_1_17,
 	RELEASE_1_16, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
-	RELEASE_1_12), t/05_asserts.t (1.3, RELEASE_1_12), t/06_skips.t
-	(1.2, RELEASE_1_13, RELEASE_1_12), t/07_setupteardown.t (1.2,
-	RELEASE_1_16, RELEASE_1_15, RELEASE_1_14, RELEASE_1_13,
-	RELEASE_1_12):
+	RELEASE_1_12), t/03_importTfuncs.t (1.2, RELEASE_1_18,
+	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/04_importSkips.t (1.2, RELEASE_1_18,
+	RELEASE_1_17, RELEASE_1_16, RELEASE_1_15, RELEASE_1_14,
+	RELEASE_1_13, RELEASE_1_12), t/05_asserts.t (1.3, RELEASE_1_12),
+	t/06_skips.t (1.2, RELEASE_1_13, RELEASE_1_12),
+	t/07_setupteardown.t (1.2, RELEASE_1_16, RELEASE_1_15,
+	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12), t/10_asserts.t (1.3,
+	RELEASE_1_12), t/11_skips.t (1.2, RELEASE_1_13, RELEASE_1_12),
+	t/15_setupteardown.t (1.2, RELEASE_1_16, RELEASE_1_15,
+	RELEASE_1_14, RELEASE_1_13, RELEASE_1_12):
 
 	- Renamed to Test::SimpleUnit
 	
@@ -180,7 +244,7 @@
 	
 2002-03-28 12:00  Michael Granger <ged@FaerieMUD.org>
 
-	* t/05_asserts.t (1.2, RELEASE_1_11):
+	* t/: 05_asserts.t (1.2), 10_asserts.t (1.2) (utags: RELEASE_1_11):
 
 	- Added tests for assertExceptionType() and assertExceptionMatch().
 	
@@ -188,7 +252,8 @@
 	
 2002-03-22 18:21  Michael Granger <ged@FaerieMUD.org>
 
-	* t/07_setupteardown.t (1.1, RELEASE_1_11, RELEASE_1_09):
+	* t/: 07_setupteardown.t (1.1), 15_setupteardown.t (1.1) (utags:
+	RELEASE_1_11, RELEASE_1_09):
 
 	First commit.
 	
@@ -204,7 +269,8 @@
 2002-03-21 18:30  Michael Granger <ged@FaerieMUD.org>
 
 	* t/: 04_importSkips.t (1.1, RELEASE_1_11), 05_asserts.t (1.1),
-	06_skips.t (1.1, RELEASE_1_11) (utags: RELEASE_1_09):
+	06_skips.t (1.1, RELEASE_1_11), 10_asserts.t (1.1), 11_skips.t
+	(1.1, RELEASE_1_11) (utags: RELEASE_1_09):
 
 	Initial commit.
 	
@@ -303,14 +369,6 @@
 	
 2001-08-03 15:55  Michael Granger <ged@FaerieMUD.org>
 
-	* Makefile.PL (1.1), TestFramework.pm (1.1), lib/Test/SimpleUnit.pm
-	(1.1), t/00_require.t (1.1), t/01_importAll.t (1.1),
-	t/02_importAsserts.t (1.1), t/03_importTfuncs.t (1.1):
-
-	Initial revision
-	
-2001-08-03 15:55  Michael Granger <ged@FaerieMUD.org>
-
 	* Makefile.PL (1.1.1.1, RELEASE_1_11, RELEASE_1_09, RELEASE_1_1),
 	TestFramework.pm (1.1.1.1, RELEASE_1_1), lib/Test/SimpleUnit.pm
 	(1.1.1.1), t/00_require.t (1.1.1.1, RELEASE_1_11, RELEASE_1_09,
@@ -320,4 +378,12 @@
 	RELEASE_1_09, RELEASE_1_1):
 
 	Initial release.
+	
+2001-08-03 15:55  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.1), TestFramework.pm (1.1), lib/Test/SimpleUnit.pm
+	(1.1), t/00_require.t (1.1), t/01_importAll.t (1.1),
+	t/02_importAsserts.t (1.1), t/03_importTfuncs.t (1.1):
+
+	Initial revision
 	

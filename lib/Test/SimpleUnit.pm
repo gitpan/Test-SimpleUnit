@@ -16,36 +16,37 @@ Test::SimpleUnit - Simplified Perl unit-testing framework
 =head1 EXAMPLE
 
   use Test::SimpleUnit qw{:functions};
-
-  # If a setup function fails, skip the rest of the tests
+  
+  # If a setup or teardown function fails, skip the rest of the tests
   Test::SimpleUnit::AutoskipFailedSetup( 1 );
-
+  Test::SimpleUnit::AutoskipFailedTeardown( 1 );
+  
   my $Instance;
   my $RequireWasOkay = 0;
-
+  
   my @tests = (
-
+    
     # Require the module
     {
       name => 'require',
       test => sub {
-
+        
         # Make sure we can load the module to be tested.
         assertNoException { require MyClass };
-
+        
         # Try to import some functions, generating a custom error message if it
         # fails.
         assertNoException { MyClass->import(':myfuncs') } "Failed to import :myfuncs";
-
+        
         # Make sure calling 'import()' actually imported the functions
         assertRef 'CODE', *::myfunc{CODE};
         assertRef 'CODE', *::myotherfunc{CODE};
-
+        
         # Set the flag to let the setup function know the module loaded okay
         $RequireWasOkay = 1;
       },
     },
-
+    
     # Setup function (this will be run before any tests which follow)
     {
       name => 'setup',
@@ -56,7 +57,7 @@ Test::SimpleUnit - Simplified Perl unit-testing framework
         $Instance = new MyClass;
       },
     },
-
+    
     # Teardown function (this will be run after any tests which follow)
     {
       name => 'teardown',
@@ -64,19 +65,28 @@ Test::SimpleUnit - Simplified Perl unit-testing framework
         undef $Instance;
       },
     },
-
+    
     # Test the connect() and disconnect() methods
     {
       name => 'connect() and disconnect()',
       test => sub {
           my $rval;
-
+          
           assertNoException { $rval = $Instance->connect };
           assert $rval, "Connect failed without error.";
           assertNoException { $Instance->disconnect };
       },
     },
-
+    
+    # One-time setup function -- overrides the previous setup, but is
+    # immediately discarded after executing once.
+    {
+      name => 'setup',
+      func => sub {
+          MyClass::prepNetwork();
+      },
+    },
+    
     # Now override the previous setup function with a new one that does
     # a connect() before each remaining test.
     {
@@ -86,7 +96,7 @@ Test::SimpleUnit - Simplified Perl unit-testing framework
           $Instance->connect;
       },
     }
-
+    
     # Same thing for teardown/disconnect()
     {
       name => 'teardown',
@@ -95,11 +105,11 @@ Test::SimpleUnit - Simplified Perl unit-testing framework
         undef $Instance;
       },
     },
-
+    
     ...
-
+    
   );
-
+  
   runTests( @testSuite );
 
 =head1 DESCRIPTION
@@ -159,17 +169,30 @@ If a test has the name 'setup' or 'teardown', it is run before or after each
 test that follows it, respectively. A second or succeeding setup or teardown
 function will supersede any function of the same type which preceded it. This
 allows a test designer to change the setup function as the tests progress. See
-the X<EXAMPLE> section for an example of how to use this.
+the L<EXAMPLE|"EXAMPLE"> section for an example of how to use this.
+
+If a test is preceeded by multiple new setup/teardown functions, the last one to
+be specified is kept, and any others are discarded after being executed
+once. This allows one to specify one-time setup and/or teardown functions at a
+given point of testing.
 
 The code reference value within a I<setup> or I<teardown> test case can
 optionally be named C<func> instead of C<test> for clarity. If there are both
 C<func> and C<test> key-value pairs in a I<setup> or I<teardown> case, the
 C<test> pair is silently ignored.
 
+=head2 Saving Test Data
+
+If the test suite requires configuration, or some other data which should
+persist between test cases, it can be dumped via Data::Dumper to a file with the
+L<saveTestData()|/"Test Data Functions"> function. In succeeding tests, it can
+be reloaded using the L<loadTestData()|/"Test Data Functions"> function.
 
 =head1 REQUIRES
 
-L<Scalar::Util|Scalar::Util>, L<Carp|Carp>, L<Exporter|Exporter>
+L<Carp|Carp>, L<Data::Compare|Data::Compare>, L<Data::Dumper|Data::Dumper>,
+L<Exporter|Exporter>, L<Fcntl|Fcntl>, L<IO::File|IO::File>,
+L<IO::Handle|IO::Handle>, L<Scalar::Util|Scalar::Util>
 
 =head1 EXPORTS
 
@@ -181,17 +204,27 @@ This module exports several useful assertion functions for the following tags:
 
 =item B<:asserts>
 
-  assert, assertNot, assertDefined, assertUndef, assertNoException,
-  assertException, assertExceptionType, assertExceptionMatches, assertEquals,
-  assertMatches, assertRef, assertNotRef, assertInstanceOf, assertKindOf, fail
+L<assert|/"Assertion Functions">, L<assertNot|/"Assertion Functions">,
+L<assertDefined|/"Assertion Functions">, L<assertUndef|/"Assertion Functions">,
+L<assertNoException|/"Assertion Functions">, L<assertException|/"Assertion
+Functions">, L<assertExceptionType|/"Assertion Functions">,
+L<assertExceptionMatches|/"Assertion Functions">, L<assertEquals|/"Assertion
+Functions">, L<assertMatches|/"Assertion Functions">, L<assertRef|/"Assertion
+Functions">, L<assertNotRef|/"Assertion Functions">,
+L<assertInstanceOf|/"Assertion Functions">, L<assertKindOf|/"Assertion
+Functions">, L<fail|/"Assertion Functions">
 
 =item B<:skips>
 
-  skipOne, skipAll
+L<skipOne|/"Skip Functions">, L<skipAll|/"Skip Functions">
 
 =item B<:testFunctions>
 
-  runTests
+L<runTests|/"FUNCTIONS">
+
+=item B<:testdata>
+
+L<loadTestData|/"Test Data Functions">, L<saveTestData|/"Test Data Functions">
 
 =item B<:functions>
 
@@ -203,7 +236,7 @@ All of the above.
 
 Michael Granger E<lt>ged@FaerieMUD.orgE<gt>
 
-Copyright (c) 1999-2002 The FaerieMUD Consortium. All rights reserved.
+Copyright (c) 1999-2003 The FaerieMUD Consortium. All rights reserved.
 
 This module is free software. You may use, modify, and/or redistribute this
 software under the terms of the Perl Artistic License. (See
@@ -222,8 +255,8 @@ use warnings qw{all};
 BEGIN {
 	### Versioning stuff and custom includes
 	use vars qw{$VERSION $RCSID};
-	$VERSION	= do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-	$RCSID	= q$Id: SimpleUnit.pm,v 1.18 2002/05/14 03:01:14 deveiant Exp $;
+	$VERSION	= 1.21;
+	$RCSID		= q$Id: SimpleUnit.pm,v 1.24 2003/01/15 21:44:46 deveiant Exp $;
 
 	### Export functions
 	use base qw{Exporter};
@@ -231,6 +264,9 @@ BEGIN {
 
 	@EXPORT		= qw{};
 	@EXPORT_OK	= qw{
+					 &saveTestData
+					 &loadTestData
+
 					 &assert
 					 &assertNot
 					 &assertDefined
@@ -255,8 +291,9 @@ BEGIN {
 					};
 	%EXPORT_TAGS = (
 		functions		=> \@EXPORT_OK,
-		asserts			=> [@EXPORT_OK[ 0 .. $#EXPORT_OK-3 ]],
-		assertFunctions	=> [@EXPORT_OK[ 0 .. $#EXPORT_OK-3 ]], # Backwards-compatibility
+		testdata		=> [@EXPORT_OK[ 0 .. 2 ]],
+		asserts			=> [@EXPORT_OK[ 2 .. $#EXPORT_OK-3 ]],
+		assertFunctions	=> [@EXPORT_OK[ 2 .. $#EXPORT_OK-3 ]], # Backwards-compatibility
 		skips			=> [@EXPORT_OK[ $#EXPORT_OK-3 .. $#EXPORT_OK-1 ]],
 		testFunctions	=> [$EXPORT_OK[ $#EXPORT_OK ]],
 	   );
@@ -266,19 +303,25 @@ BEGIN {
 	use constant FALSE	=> 0;
 
 	# Load other modules
-	use Data::Dumper qw{};
-	use Scalar::Util qw{blessed};
-	use IO::Handle qw{};
-	use Carp qw{croak confess};
+	use Data::Dumper	qw{};
+	use Data::Compare	qw{Compare};
+	use Scalar::Util	qw{blessed dualvar};
+	use IO::Handle		qw{};
+	use IO::File		qw{};
+	use Fcntl			qw{O_CREAT O_RDONLY O_WRONLY O_TRUNC};
+	use Carp			qw{croak confess};
 }
 
 
 #####################################################################
 ###	C L A S S   V A R I A B L E S
 #####################################################################
-our ( $AutoskipFailedSetup, $Debug, $DefaultOutputHandle, $OutputHandle, @Counters );
+our ( $AutoskipFailedSetup, $AutoskipFailedDataLoad, $AutoskipFailedTeardown,
+	  $Debug, $DefaultOutputHandle, $OutputHandle, @Counters );
 
 $AutoskipFailedSetup = FALSE;
+$AutoskipFailedDataLoad = FALSE;
+$AutoskipFailedTeardown = FALSE;
 $Debug = FALSE;
 $DefaultOutputHandle = IO::Handle->new_from_fd( fileno STDOUT, 'w' );
 $OutputHandle = $DefaultOutputHandle;
@@ -296,11 +339,32 @@ sub AutoskipFailedSetup {
 }
 
 
+### FUNCTION: AutoskipFailedDataLoad( $trueOrFalse )
+### If set to a true value, any failure to reload test data via loadTestData()
+### will cause the test to be skipped instead of running.
+sub AutoskipFailedDataLoad {
+	shift if @_ && $_[0] eq __PACKAGE__; # <- Backward compatibility
+	$AutoskipFailedDataLoad = shift if @_;
+	return $AutoskipFailedDataLoad;
+}
+
+
+### FUNCTION: AutoskipFailedTeardown( $trueOrFalse )
+### If set to a true value, any failed teardown functions will cause the test to
+### be skipped instead of running.
+sub AutoskipFailedTeardown {
+	shift if @_ && $_[0] eq __PACKAGE__; # <- Backward compatibility
+	$AutoskipFailedTeardown = shift if @_;
+	return $AutoskipFailedTeardown;
+}
+
+
 ### FUNCTION: Debug( $trueOrFalse )
 ### If set to a true value, the test suite will be dumped to STDERR before
 ### running.
 sub Debug {
 	$Debug = shift if @_;
+	print STDERR ">>> Turned debugging on.\n" if $Debug;
 	return $Debug;
 }
 
@@ -364,6 +428,9 @@ sub _PopAssertionCounter {
 #####################################################################
 ###	F O R W A R D   D E C L A R A T I O N S
 #####################################################################
+sub saveTestData ($\%);
+sub loadTestData ($);
+
 sub assert ($;$);
 sub assertNot ($;$);
 sub assertDefined ($;$);
@@ -388,10 +455,64 @@ sub runTests;
 
 
 
+#####################################################################
+###	T E S T   D A T A   L O A D / S A V E   F U N C T I O N S
+#####################################################################
 
-###############################################################################
+### (TEST DATA) FUNCTION: saveTestData( $filename, %datahash )
+### Save the key/value pairs in I<%datahash> to a file with the specified
+### I<filename> for later loading via loadTestData().
+sub saveTestData ($\%) {
+	my ( $filename, $datahash ) = @_;
+
+	my $data = Data::Dumper->new( [$datahash], [qw{datahash}] )
+		or die "Couldn't create Data::Dumper object";
+	my $datafile = IO::File->new( $filename, O_CREAT|O_WRONLY|O_TRUNC )
+		or die "open: $filename: $!";
+	my $dumped = $data->Indent(0)->Purity(1)->Terse(1)->Dumpxs;
+
+	if ( $Debug ) {
+		print STDERR "saveTestData: Saving dumped test data '$dumped'\n";
+	}
+
+	$datafile->printflush( $dumped );
+	$datafile->close;
+
+	return TRUE;
+}
+
+
+### (TEST DATA) FUNCTION: loadTestData( $filename )
+### Load key/data pairs from a data file that was saved from previous
+### tests. Returns a reference to a hash of data items.
+sub loadTestData ($) {
+	my $filename = shift;
+
+	my $datafile = IO::File->new( $filename, O_RDONLY )
+		or die "open: $filename: $!";
+	my $dumped = join '', $datafile->getlines;
+
+	if ( $Debug ) {
+		print STDERR "loadTestData: Loading dumped test data '$dumped'\n";
+	}
+
+	my $data = eval $dumped;
+
+	if ( $@ ) {
+		my $message = "Error while evaluating dumped data: $@";
+		$message = bless \$message, 'SKIPALL' if $AutoskipFailedDataLoad;
+		die $message;
+	}
+
+	return $data;
+}
+
+
+
+
+#####################################################################
 ###	T E S T I N G   F U N C T I O N S
-###############################################################################
+#####################################################################
 
 ### (ASSERTION) FUNCTION: assert( $value[, $failureMessage] )
 ### Die with a failure message if the specified value is not true. If the
@@ -490,16 +611,18 @@ sub assertExceptionMatches (&$;$) {
 
 
 ### (ASSERTION) FUNCTION: assertEquals( $wanted, $tested[, $failureMessage] )
-### Die with a failure message if the specified wanted value doesn't equal
-### (stringwise) the specified tested value. If the optional failureMessage is
-### not given, one will be generated.
+### Die with a failure message if the specified wanted value doesn't equal the
+### specified tested value. The comparison is done with Data::Compare, so
+### arbitrarily complex data structures may be compared, as long as they contain
+### no GLOB, CODE, or REF references. If the optional failureMessage is not
+### given, one will be generated.
 sub assertEquals ($$;$) {
 	my ( $wanted, $tested, $message ) = @_;
 
-	$wanted = '(undef)' unless defined $wanted;
-	$tested = '(undef)' unless defined $tested;
-	$message ||= "Wanted '$wanted', got '$tested' instead";
-	assert( ("$wanted" eq "$tested"), $message );
+	$message ||= sprintf( "Wanted '%s', got '%s' instead",
+						  defined $wanted ? $wanted : "(undef)",
+						  defined $tested ? $tested : "(undef)" );
+	assert( Compare($wanted, $tested), $message );
 }
 
 ### (ASSERTION) FUNCTION: assertMatches( $wantedRegexp, $testedValue[, $failureMessage] )
@@ -550,8 +673,10 @@ sub assertNotRef ($;$) {
 sub assertInstanceOf ($$;$) {
 	my ( $wantedClass, $testValue, $message ) = @_;
 
-	assert( blessed $testValue,
-			$message || "Expected an instance of '$wantedClass', got a non-object ('$testValue')" );
+	my $defaultMessage = sprintf( "Expected an instance of '%s', got a non-object ('%s')",
+								  $wantedClass,
+								  defined $testValue ? $testValue : "(undef)" );
+	assert( blessed $testValue, $message || $defaultMessage );
 
 	$message ||= sprintf( "Expected an instance of '$wantedClass', got an instance of '%s' instead",
 						  blessed $testValue );
@@ -566,11 +691,14 @@ sub assertInstanceOf ($$;$) {
 sub assertKindOf ($$;$) {
 	my ( $wantedClass, $testValue, $message ) = @_;
 
-	assert( blessed $testValue,
-			$message || "Expected an instance of '$wantedClass' or a subclass, got a non-object ('$testValue')" );
+	my $defaultMessage = sprintf( "Expected an instance of '%s' or a subclass, got a non-object ('%s')",
+								  $wantedClass,
+								  defined $testValue ? $testValue : "(undef)" );
+	assert( blessed $testValue, $message || $defaultMessage );
 
-	$message ||= sprintf "Expected an instance of '$wantedClass' or a subclass, got an instance of '%s' instead",
-		blessed $testValue;
+	$message ||= sprintf( "Expected an instance of '%s' or a subclass, got an instance of '%s' instead",
+						  $wantedClass,
+						  blessed $testValue );
 	assert( $testValue->isa($wantedClass), $message );
 }
 
@@ -693,33 +821,48 @@ sub _runTests {
 		$testCount++;
 
 		# Run the current setup function unless we're in skip mode, there aren't
-		# any setup functions, or the earliest one occurred after the current test
+		# any setup functions, or the earliest one occurs after the current test
 		unless ( $skip || !@$setupFuncs || $setupFuncs->[0]{index} > $testCount - 1 ) {
+			my @tossedFuncs = ();
 
-			# Shift off any setup functions which are overridden by new ones
-			# for this test
-			while ( $#{$setupFuncs} && $setupFuncs->[1]{index} <= $testCount - 1 ) {
-				print STDERR ">>> Setup $setupFuncs->[1]{index} takes precedence for test $testCount.\n"
-					if $Debug;
-				shift @$setupFuncs;
+			# Remove tests that will be superceded this turn...
+		  SETUP: while ( @$setupFuncs > 1 && $setupFuncs->[1]{index} <= $testCount - 1 ) {
+				printf STDERR ("Test '%s' superceded by '%s'\n",
+							   $setupFuncs->[0]{name},
+							   $setupFuncs->[1]{name});
+				push @tossedFuncs, shift(@$setupFuncs);
+				next SETUP;
 			}
 
 			# Get the function and execute it
-			$func = $setupFuncs->[0]{func} || $setupFuncs->[0]{test};
-			eval { $func->( $test ) };
+			foreach my $setup ( @tossedFuncs, $setupFuncs->[0] ) {
+				$func = $setup->{func} || $setup->{test};
+				eval { $func->($test) };
 
-			# If there was an error, handle any autoskipping
-			if ( $@ ) {
-				# Handle an explicit skipAll in a setup function
-				if ( ref $@ eq 'SKIPALL' ) {
-					$OutputHandle->print( "ok # skip: ${$@}\n" );
-					$skip = ${$@};
-					next TEST;
-				} else {
-					print STDERR "Warning: Setup failed: $@\n";
-					$OutputHandle->print( "ok # skip: Setup failed ($@)\n" ), $skip = ${$@}
-						if $AutoskipFailedSetup;
+				# If there was an error, handle any autoskipping
+				if ( $@ ) {
+					# Handle an explicit skipAll in a setup function
+					if ( ref $@ eq 'SKIPALL' ) {
+						$OutputHandle->print( "ok # skip: ${$@}\n" );
+						$skip = ${$@};
+						next TEST;
+					} else {
+						print STDERR "Warning: Setup failed: $@\n";
+						$OutputHandle->print( "ok # skip: Setup failed ($@)\n" ), $skip = ${$@}
+							if $AutoskipFailedSetup;
+					}
 				}
+
+				# Remove a test which is superceded by the following one
+				if ( @$setupFuncs > 1 && $setupFuncs->[1]{index} <= $testCount ) {
+					if ( $Debug ) {
+						printf STDERR ("Test '%s' succeeded by '%s'\n",
+									   $func->{name},
+									   $setupFuncs->[1]{name});
+					}
+					shift @$setupFuncs;
+				}
+
 			}
 		}
 
@@ -762,22 +905,50 @@ sub _runTests {
 			$OutputHandle->print( "ok\n" );
 		}
 
-		# Run the current teardown function, if any
-		unless ( $skip || ! @$teardownFuncs || $teardownFuncs->[0]{index} > $testCount - 1 ) {
+		# Run the current teardown function unless we're in skip mode, there aren't
+		# any teardown functions, or the earliest one occurs after the current test
+		unless ( $skip || !@$teardownFuncs || $teardownFuncs->[0]{index} > $testCount - 1 ) {
+			my @tossedFuncs = ();
 
-			# Shift off any teardown functions which are overridden by new ones
-			# for this test
-			while ( $#{$teardownFuncs} && $teardownFuncs->[1]{index} <= $testCount - 1 ) {
-				print STDERR ">>> Teardown $teardownFuncs->[1]{index} takes precedence for test $testCount.\n"
-					if $Debug;
-				shift @$teardownFuncs;
+			# Remove tests that will be superceded this turn...
+		  TEARDOWN: while ( @$teardownFuncs > 1 && $teardownFuncs->[1]{index} <= $testCount - 1 ) {
+				printf STDERR ("Test '%s' superceded by '%s'\n",
+							   $teardownFuncs->[0]{name},
+							   $teardownFuncs->[1]{name});
+				push @tossedFuncs, shift(@$teardownFuncs);
+				next TEARDOWN;
 			}
 
 			# Get the function and execute it
-			$func = $teardownFuncs->[0]{func} || $teardownFuncs->[0]{test};
-			eval { $func->( $test ) };
+			foreach my $teardown ( @tossedFuncs, $teardownFuncs->[0] ) {
+				$func = $teardown->{func} || $teardown->{test};
+				eval { $func->($test) };
 
-			print STDERR "Warning: Teardown failed: $@\n" if $@;
+				# If there was an error, handle any autoskipping
+				if ( $@ ) {
+					# Handle an explicit skipAll in a teardown function
+					if ( ref $@ eq 'SKIPALL' ) {
+						$OutputHandle->print( "ok # skip: ${$@}\n" );
+						$skip = ${$@};
+						next TEST;
+					} else {
+						print STDERR "Warning: Teardown failed: $@\n";
+						$OutputHandle->print( "ok # skip: Teardown failed ($@)\n" ), $skip = ${$@}
+							if $AutoskipFailedTeardown;
+					}
+				}
+
+				# Remove a test which is superceded by the following one
+				if ( @$teardownFuncs > 1 && $teardownFuncs->[1]{index} <= $testCount ) {
+					if ( $Debug ) {
+						printf STDERR ("Test '%s' succeeded by '%s'\n",
+									   $func->{name},
+									   $teardownFuncs->[1]{name});
+					}
+					shift @$teardownFuncs;
+				}
+
+			}
 		}
 	}
 
@@ -832,10 +1003,35 @@ sub _prepSuite {
 
 =over 4
 
+=item I<AutoskipFailedDataLoad( $trueOrFalse )>
+
+If set to a true value, any failure to reload test data via loadTestData()
+will cause the test to be skipped instead of running.
+
 =item I<AutoskipFailedSetup( $trueOrFalse )>
 
 If set to a true value, any failed setup functions will cause the test to be
 skipped instead of running.
+
+=item I<AutoskipFailedTeardown( $trueOrFalse )>
+
+If set to a true value, any failed teardown functions will cause the test to
+be skipped instead of running.
+
+=item I<Debug( $trueOrFalse )>
+
+If set to a true value, the test suite will be dumped to STDERR before
+running.
+
+=item I<OutputHandle( $handle )>
+
+Set the I<handle> that will be used to output test progress
+information. This can be used to run tests under Test::Harness without
+influencing the test result, such as when invoking runTests() from within an
+assertion. It defaults to STDOUT, which will be what it is restored to if it
+is called with no argument. The argument is tested for support for the
+'print', 'flush', and 'printf' methods, and dies if it does not support
+them. This function is mostly to support self-testing.
 
 =item I<runTests( @testSuite )>
 
@@ -861,9 +1057,11 @@ optional failureMessage is not given, one will be generated.
 
 =item I<assertEquals( $wanted, $tested[, $failureMessage] )>
 
-Die with a failure message if the specified wanted value doesn't equal
-(stringwise) the specified tested value. If the optional failureMessage is
-not given, one will be generated.
+Die with a failure message if the specified wanted value doesn't equal the
+specified tested value. The comparison is done with Data::Compare, so
+arbitrarily complex data structures may be compared, as long as they contain
+no GLOB, CODE, or REF references. If the optional failureMessage is not
+given, one will be generated.
 
 =item I<assertException( \&code[, $failureMessage] )>
 
@@ -940,6 +1138,47 @@ instead.
 
 =back
 
+=head2 Private Functions
+
+=over 4
+
+=item I<_CountAssertion()>
+
+Add 1 to the count of assertions run in the current counter frame.
+
+=item I<_CountSuccess()>
+
+Add 1 to the count of successful assertions in the current counter frame.
+
+=item I<_PopAssertionCounter()>
+
+Remove the current assertion counter, and return a list of the number of
+assertions run, and the number of assertions which succeeded.
+
+=item I<_PushAssertionCounter()>
+
+Add a pair of assertion counters to the stack. Assertion counters are used
+to count assertion runs/successes, and this adds a level in case of
+recursive runTests() calls.
+
+=back
+
+=head2 Protected Functions
+
+=over 4
+
+=item I<_prepSuite( @tests )>
+
+Split the specified array of test hashrefs into three arrays: setupFuncs,
+tests, and teardownFuncs. Return references to the three arrays.
+
+=item I<_runTests( \@setupFuncs, \@tests, \@teardownFuncs )>
+
+Run the specified I<tests>, running any I<setupFuncs> before each one, and
+any I<teardownFuncs> after each one.
+
+=back
+
 =head2 Skip Functions
 
 =over 4
@@ -953,6 +1192,22 @@ they were skipped.
 
 Skip the rest of this test, optionally outputting a message as to why the
 rest of the test was skipped.
+
+=back
+
+=head2 Test Data Functions
+
+=over 4
+
+=item I<loadTestData( $filename )>
+
+Load key/data pairs from a data file that was saved from previous
+tests. Returns a reference to a hash of data items.
+
+=item I<saveTestData( $filename, %datahash )>
+
+Save the key/value pairs in I<%datahash> to a file with the specified
+I<filename> for later loading via loadTestData().
 
 =back
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #		Test script for Test::SimpleUnit
-#		$Id: 08_emptysuite.t,v 1.1 2002/04/23 22:01:34 deveiant Exp $
+#		$Id: 20_emptysuite.t,v 1.1 2002/04/23 22:01:34 deveiant Exp $
 #
 #		Before `make install' is performed this script should be runnable with
 #		`make test'. After `make install' it should work as `perl 08_emptysuite.t'

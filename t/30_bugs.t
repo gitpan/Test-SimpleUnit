@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 #		Test script for fixed bugs that don't need their own suite
-#		$Id: 09_bugs.t,v 1.1 2002/05/14 02:59:02 deveiant Exp $
+#		$Id: 30_bugs.t,v 1.1 2002/05/14 02:59:02 deveiant Exp $
 #
 #		Before `make install' is performed this script should be runnable with
 #		`make test'. After `make install' it should work as `perl 09_bugs.t'
