@@ -1,0 +1,215 @@
+2002-04-08 12:57  Michael Granger <ged@FaerieMUD.org>
+
+	* README (1.2):
+
+	- De-tabified.
+	
+2002-04-08 12:52  Michael Granger <ged@FaerieMUD.org>
+
+	* README (1.1):
+
+	Initial commit.
+	
+2002-04-08 12:50  Michael Granger <ged@FaerieMUD.org>
+
+	* t/05_asserts.t (1.4):
+
+	- Modified error messages to reflect changes in assert().
+	
+2002-04-08 12:47  Michael Granger <ged@FaerieMUD.org>
+
+	* lib/Test/SimpleUnit.pm (1.13):
+
+	- Modified to pass "\n" as the last arg to die to remove the irrelevant 'at
+	  line...' message. When I have more time, I should add code to backtrace
+	  through caller() and get a useful equivalent.
+	
+	- Look for $ENV{TEST_VERBOSE}, too.
+	
+2002-03-29 16:45  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.3, RELEASE_1_12):
+
+	- Fixed ci/tag target
+	
+2002-03-29 16:41  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.2), lib/Test/SimpleUnit.pm (1.12, RELEASE_1_12),
+	t/00_require.t (1.2, RELEASE_1_12), t/01_importAll.t (1.2,
+	RELEASE_1_12), t/02_importAsserts.t (1.3, RELEASE_1_12),
+	t/03_importTfuncs.t (1.2, RELEASE_1_12), t/04_importSkips.t (1.2,
+	RELEASE_1_12), t/05_asserts.t (1.3, RELEASE_1_12), t/06_skips.t
+	(1.2, RELEASE_1_12), t/07_setupteardown.t (1.2, RELEASE_1_12):
+
+	- Renamed to Test::SimpleUnit
+	
+2002-03-29 15:59  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.12):
+
+	Renamed and moved into lib/Test
+	
+2002-03-28 14:01  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.11, RELEASE_1_11), lib/Test/SimpleUnit.pm
+	(1.11):
+
+	- Fixed copyright.
+	
+2002-03-28 13:59  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.10), lib/Test/SimpleUnit.pm (1.10):
+
+	- assertExceptionMatches(): New assertion function.
+	
+	- assertExceptionType(): New assertion function.
+	
+	- assertKindOf(): New assertion function.
+	
+	- Corrected skip handling for setup/teardown.
+	
+	- Added handler for 'skipAll' to setup/teardown.
+	
+2002-03-28 12:00  Michael Granger <ged@FaerieMUD.org>
+
+	* t/05_asserts.t (1.2, RELEASE_1_11):
+
+	- Added tests for assertExceptionType() and assertExceptionMatch().
+	
+	- Simplified some of the other tests with new asserts.
+	
+2002-03-22 18:21  Michael Granger <ged@FaerieMUD.org>
+
+	* t/07_setupteardown.t (1.1, RELEASE_1_11, RELEASE_1_09):
+
+	First commit.
+	
+2002-03-22 18:20  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.9, RELEASE_1_09), lib/Test/SimpleUnit.pm
+	(1.9):
+
+	- Added 'setup' and 'teardown' test handling to facilitate XUnit-style pre- and post-test functions. This feature still needs documenting.
+	
+	- AutoskipFailedSetup(): New method to automatically skip any tests in a test case after a 'setup' test has failed.
+	
+2002-03-21 18:30  Michael Granger <ged@FaerieMUD.org>
+
+	* t/: 04_importSkips.t (1.1, RELEASE_1_11), 05_asserts.t (1.1),
+	06_skips.t (1.1, RELEASE_1_11) (utags: RELEASE_1_09):
+
+	Initial commit.
+	
+2002-03-21 18:30  Michael Granger <ged@FaerieMUD.org>
+
+	* t/04_asserts.t (1.3):
+
+	- Renamed to 05_asserts.t to make room for the skip-import tests.
+	
+2002-03-21 18:27  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.8), lib/Test/SimpleUnit.pm (1.8):
+
+	- fail: New function
+	
+	- skipOne: New function
+	
+	- skipAll: New function
+	
+	- Fixed up some warnings that showed up when using assertUndef() and assertNot()
+	  with undefined values and no message.
+	
+2002-03-05 15:47  Michael Granger <ged@FaerieMUD.org>
+
+	* t/04_asserts.t (1.2):
+
+	- Modified import tag to reflect name change from 'assertFunctions' to
+	  'asserts'.
+	
+	- Added tests for new assertions 'assertDefined' and 'assertUndef'.
+	
+2002-03-05 15:46  Michael Granger <ged@FaerieMUD.org>
+
+	* t/02_importAsserts.t (1.2, RELEASE_1_11, RELEASE_1_09):
+
+	- Modified import tag to reflect name change from 'assertFunctions' to
+	  'asserts'.
+	
+2002-03-05 15:46  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.7), lib/Test/SimpleUnit.pm (1.7):
+
+	- Changed the name of the assertion exporter tag to 'asserts'; an
+	  'assertFunctions' tag remains for backwards-compatibility, but may be
+	  deprecated in the future.
+	
+	- Added 'assertUndef' assertion
+	
+	- Added 'assertDefined' assertion
+	
+2001-11-28 13:13  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.6), lib/Test/SimpleUnit.pm (1.6):
+
+	- Update documentation.
+	
+2001-10-29 12:43  Michael Granger <ged@FaerieMUD.org>
+
+	* t/04_asserts.t (1.1):
+
+	First release.
+	
+2001-10-29 12:43  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.5), lib/Test/SimpleUnit.pm (1.5):
+
+	- Cleaned up a bunch of places where an undefined value in an assertion value
+	  was not handled gracefully. There are probably more somewhere.
+	
+	- Added two more assertion functions: assertMatches() and assertNotRef().
+	
+	- Moved the scalar test out of assertRef() and into the new assertNotRef().
+	
+	- Made the error message for assertInstanceOf() a bit more accurate.
+	
+2001-09-08 23:12  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.4), lib/Test/SimpleUnit.pm (1.4):
+
+	- Fixed POD escape thingies in the docs.
+	
+2001-09-08 23:10  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.3), lib/Test/SimpleUnit.pm (1.3):
+
+	- Fixed auto-generated docs, as the moduletool parser apparently doesn't like
+	  code sample indent stuff.
+	
+2001-08-03 16:35  Michael Granger <ged@FaerieMUD.org>
+
+	* TestFramework.pm (1.2), lib/Test/SimpleUnit.pm (1.2):
+
+	- Fixed and added more documentation
+	
+	- Added true return value at module end
+	
+2001-08-03 15:55  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.1), TestFramework.pm (1.1), lib/Test/SimpleUnit.pm
+	(1.1), t/00_require.t (1.1), t/01_importAll.t (1.1),
+	t/02_importAsserts.t (1.1), t/03_importTfuncs.t (1.1):
+
+	Initial revision
+	
+2001-08-03 15:55  Michael Granger <ged@FaerieMUD.org>
+
+	* Makefile.PL (1.1.1.1, RELEASE_1_11, RELEASE_1_09, RELEASE_1_1),
+	TestFramework.pm (1.1.1.1, RELEASE_1_1), lib/Test/SimpleUnit.pm
+	(1.1.1.1), t/00_require.t (1.1.1.1, RELEASE_1_11, RELEASE_1_09,
+	RELEASE_1_1), t/01_importAll.t (1.1.1.1, RELEASE_1_11,
+	RELEASE_1_09, RELEASE_1_1), t/02_importAsserts.t (1.1.1.1,
+	RELEASE_1_1), t/03_importTfuncs.t (1.1.1.1, RELEASE_1_11,
+	RELEASE_1_09, RELEASE_1_1):
+
+	Initial release.
+	
