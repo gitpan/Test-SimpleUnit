@@ -3,65 +3,169 @@
 
 =head1 NAME
 
-Test::SimpleUnit - Simplified XUnit-style testing framework for Perl classes
+Test::SimpleUnit - Simplified Perl unit-testing framework
 
 =head1 SYNOPSIS
 
   use Test::SimpleUnit qw{:functions};
+  runTests(
+    {name => "test1", test => sub {...}},
+    {name => "testN", test => sub {...}}
+  );
 
+=head1 EXAMPLE
+
+  use Test::SimpleUnit qw{:functions};
+
+  # If a setup function fails, skip the rest of the tests
   Test::SimpleUnit::AutoskipFailedSetup( 1 );
 
-  my $testThing;
+  my $Instance;
+  my $RequireWasOkay = 0;
 
-  my @testSuite = (
+  my @tests = (
 
-	# Setup function
-	{
-		name => 'setup',
-		func => sub { $testThing = new Thing },
-	},
+    # Require the module
+    {
+      name => 'require',
+      test => sub {
 
-	# Teardown function
-	{
-		name => 'teardown',
-		func => sub { undef $testThing },
-	},
+        # Make sure we can load the module to be tested.
+        assertNoException { require MyClass };
 
-	# Test 1
-	{
-		name => 'test1',
-		test => sub { assertEquals 'something', somefunc() },
-	}
+        # Try to import some functions, generating a custom error message if it
+        # fails.
+        assertNoException { MyClass->import(':myfuncs') } "Failed to import :myfuncs";
+
+        # Make sure calling 'import()' actually imported the functions
+        assertRef 'CODE', *::myfunc{CODE};
+        assertRef 'CODE', *::myotherfunc{CODE};
+
+        # Set the flag to let the setup function know the module loaded okay
+        $RequireWasOkay = 1;
+      },
+    },
+
+    # Setup function (this will be run before any tests which follow)
+    {
+      name => 'setup',
+      test => sub {
+        # If the previous test didn't finish, it's untestable, so just skip the
+        # rest of the tests
+        skipAll "Module failed to load" unless $RequireWasOkay;
+        $Instance = new MyClass;
+      },
+    },
+
+    # Teardown function (this will be run after any tests which follow)
+    {
+      name => 'teardown',
+      test => sub {
+        undef $Instance;
+      },
+    },
+
+    # Test the connect() and disconnect() methods
+    {
+      name => 'connect() and disconnect()',
+      test => sub {
+          my $rval;
+
+          assertNoException { $rval = $Instance->connect };
+          assert $rval, "Connect failed without error.";
+          assertNoException { $Instance->disconnect };
+      },
+    },
+
+    # Now override the previous setup function with a new one that does
+    # a connect() before each remaining test.
+    {
+      name => 'setup',
+      test => sub {
+          $Instance = new MyClass;
+          $Instance->connect;
+      },
+    }
+
+    # Same thing for teardown/disconnect()
+    {
+      name => 'teardown',
+      test => sub {
+        $Instance->disconnect;
+        undef $Instance;
+      },
+    },
+
+    ...
+
   );
 
   runTests( @testSuite );
 
 =head1 DESCRIPTION
 
-This is a simplified XUnit-style test framework for creating unit tests to be
+This is a simplified Perl unit-testing framework for creating unit tests to be
 run either standalone or under Test::Harness.
 
-Tests in Test::SimpleUnit consist of one or more test suites, each of which has
-one or more test cases, and setup/teardown functions.
+=head2 Testing
 
-A test suite is an array of test cases which are run, in order, by passing the
-array to the L<runTests()|/"runTests"> function. You may wish to split test suites up into
-separate files under a C<t/> directory so they will run under a
-L<Test::Harness|Test::Harness>-style C<make test>.
+Testing in Test::SimpleUnit is done by running a test suite, either via 'make
+test', which uses the L<Test::Harness|Test::Harness> 'test' target written by
+L<ExtUtils::MakeMaker|ExtUtils::MakeMaker>, or as a standalone script.
 
-A test case is a hashref which contains two key-value pairs: a I<name> key with
-the name of the test case as the value, and a code reference value under a
-I<test> key. If a test case has the name 'setup' or 'teardown', it is added to a
-list of functions to be run before or after each test case, respectively. The
-code reference value within a I<setup> or I<teardown> test case can optionally
-be named C<func> instead of C<test> for clarity. If there are both C<func> and
-C<test> key-value pairs in a I<setup> or I<teardown> case, the C<test> pair is
-silently ignored.
+If errors occur while running tests via the 'make test' method, you can get more
+verbose output about the test run by adding C<TEST_VERBOSE=1> to the end of the
+C<make> invocation:
 
-Each test case's test function can make one or more assertions by using the
+  $ make test TEST_VERBOSE=1
+
+If you want to display only the messages caused by failing assertions, you can
+add a C<VERBOSE=1> to the end of the C<make> invocation instead:
+
+  $ make test VERBOSE=1
+
+=head2 Test Suites
+
+A test suite is one or more test cases, each of which tests a specific unit of
+functionality.
+
+=head2 Test Cases
+
+A test case is a unit of testing which consists of one or more tests, combined
+with setup and teardown functions that make the necessary preparations for
+testing.
+
+You may wish to split test cases up into separate files under a C<t/> directory
+so they will run under a L<Test::Harness|Test::Harness>-style C<make test>.
+
+=head2 Tests
+
+A test is a hashref which contains two key-value pairs: a I<name> key with the
+name of the test as the value, and a code reference under a I<test> key:
+
+  {
+    name => 'This is the name of the test',
+    test => sub { ...testing code... }
+  }
+
+Each test's C<test> function can make one or more assertions by using the
 L<Assertion Functions|/"Assertion Functions"> provided, or can indicate that it
-or any trailing tests in the same suite should be skipped by calling one of the
-provided L<Skip Functions|/"Skip Functions">.
+or any trailing tests in the same test case should be skipped by calling one of
+the provided L<Skip Functions|/"Skip Functions">.
+
+=head2 Setup and Teardown Functions
+
+If a test has the name 'setup' or 'teardown', it is run before or after each
+test that follows it, respectively. A second or succeeding setup or teardown
+function will supersede any function of the same type which preceded it. This
+allows a test designer to change the setup function as the tests progress. See
+the X<EXAMPLE> section for an example of how to use this.
+
+The code reference value within a I<setup> or I<teardown> test case can
+optionally be named C<func> instead of C<test> for clarity. If there are both
+C<func> and C<test> key-value pairs in a I<setup> or I<teardown> case, the
+C<test> pair is silently ignored.
+
 
 =head1 REQUIRES
 
@@ -118,8 +222,8 @@ use warnings qw{all};
 BEGIN {
 	### Versioning stuff and custom includes
 	use vars qw{$VERSION $RCSID};
-	$VERSION	= do { my @r = (q$Revision: 1.16 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-	$RCSID	= q$Id: SimpleUnit.pm,v 1.16 2002/04/23 22:04:34 deveiant Exp $;
+	$VERSION	= do { my @r = (q$Revision: 1.17 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+	$RCSID	= q$Id: SimpleUnit.pm,v 1.17 2002/04/25 20:50:27 deveiant Exp $;
 
 	### Export functions
 	use base qw{Exporter};
@@ -160,6 +264,8 @@ BEGIN {
 	use constant TRUE	=> 1;
 	use constant FALSE	=> 0;
 
+	use Data::Dumper qw{};
+
 	use Scalar::Util qw{blessed};
 	use Carp qw{confess};
 }
@@ -168,7 +274,7 @@ BEGIN {
 #####################################################################
 ###	C L A S S   V A R I A B L E S
 #####################################################################
-our ( $AutoskipFailedSetup );
+our ( $AutoskipFailedSetup, $Debug );
 
 $AutoskipFailedSetup = FALSE;
 
@@ -181,6 +287,15 @@ sub AutoskipFailedSetup {
 	shift if @_ && $_[0] eq __PACKAGE__; # <- Backward compatibility
 	$AutoskipFailedSetup = shift if @_;
 	return $AutoskipFailedSetup;
+}
+
+
+### FUNCTION: Debug( $trueOrFalse )
+### If set to a true value, the test suite will be dumped to STDERR before
+### running.
+sub Debug {
+	$Debug = shift if @_;
+	return $Debug;
 }
 
 
@@ -454,6 +569,11 @@ sub runTests {
 	# Split setup funcs, teardown funcs, and tests into three arrayrefs
 	( $setupFuncs, $tests, $teardownFuncs ) = _prepSuite( @testSuite );
 
+	if ( $Debug ) {
+		print STDERR Data::Dumper->Dumpxs( [$setupFuncs,$tests,$teardownFuncs],
+										   [qw{setupFuncs tests teardownFuncs}] ), "\n";
+	}
+
 	# If we have non-setup/teardown tests, run them
 	if ( @$tests ) {
 		@failures = _runTests( $setupFuncs, $tests, $teardownFuncs );
@@ -485,6 +605,7 @@ sub _runTests {
 		$testCount,
 		@failures,
 		$skip,
+		$func,
 	   );
 
 	$runningUnderTestHarness = 1 if $ENV{HARNESS_ACTIVE};
@@ -502,33 +623,41 @@ sub _runTests {
 
 
   TEST: foreach my $test ( @$tests ) {
+		$testCount++;
 
-		# Run any setup functions we have
-		unless ( $skip ) {
-			foreach my $func ( @$setupFuncs ) {
-				if ( exists $func->{func} ) {
-					eval { $func->{func}( $test ) };
+		# Run the current setup function unless we're in skip mode, there aren't
+		# any setup functions, or the earliest one occurred after the current test
+		unless ( $skip || !@$setupFuncs || $setupFuncs->[0]{index} > $testCount - 1 ) {
+
+			# Shift off any setup functions which are overridden by new ones
+			# for this test
+			while ( $#{$setupFuncs} && $setupFuncs->[1]{index} <= $testCount - 1 ) {
+				print STDERR ">>> Setup $setupFuncs->[1]{index} takes precedence for test $testCount.\n"
+					if $Debug;
+				shift @$setupFuncs;
+			}
+
+			# Get the function and execute it
+			$func = $setupFuncs->[0]{func} || $setupFuncs->[0]{test};
+			eval { $func->( $test ) };
+
+			# If there was an error, handle any autoskipping
+			if ( $@ ) {
+				# Handle an explicit skipAll in a setup function
+				if ( ref $@ eq 'SKIPALL' ) {
+					print "ok # skip: ${$@}\n";
+					$skip = ${$@};
+					next TEST;
 				} else {
-					eval { $func->{test}( $test ) };
-				}
-
-				if ( $@ ) {
-					# Handle an explicit skipAll in a setup function
-					if ( ref $@ eq 'SKIPALL' ) {
-						print "ok # skip: ${$@}\n";
-						$skip = ${$@};
-						next TEST;
-					} else {
-						print STDERR "Warning: Setup failed: $@\n";
-						print( "ok # skip: Setup failed ($@)\n" ), $skip = ${$@}
-							if $AutoskipFailedSetup;
-					}
+					print STDERR "Warning: Setup failed: $@\n";
+					print( "ok # skip: Setup failed ($@)\n" ), $skip = ${$@}
+						if $AutoskipFailedSetup;
 				}
 			}
 		}
 
 		# Print the test header and skip if we're skipping
-		print ++$testCount, ". $test->{name}: " unless $runningUnderTestHarness;
+		print $testCount, ". $test->{name}: " unless $runningUnderTestHarness;
 		print( "ok # skip $skip\n" ), next TEST if $skip;
 
 		# Run the actual test
@@ -536,6 +665,8 @@ sub _runTests {
 			$test->{test}();
 		};
 
+		# If there was an exception, handle it. It's either a 'skip the rest',
+		# 'skip this one', or a bonafide error
 		if ( $@ ) {
 			if ( ref $@ eq 'SKIPONE' ) {
 				print "ok # skip: ${$@}\n";
@@ -550,13 +681,20 @@ sub _runTests {
 		}
 		print "ok\n";
 
-		# Run teardown functions
-		foreach my $func ( @$teardownFuncs ) {
-			if ( exists $func->{func} ) {
-				eval { $func->{func}( $test ) };
-			} else {
-				eval { $func->{test}( $test ) };
+		# Run the current teardown function, if any
+		unless ( $skip || ! @$teardownFuncs || $teardownFuncs->[0]{index} > $testCount - 1 ) {
+
+			# Shift off any teardown functions which are overridden by new ones
+			# for this test
+			while ( $#{$teardownFuncs} && $teardownFuncs->[1]{index} <= $testCount - 1 ) {
+				print STDERR ">>> Teardown $teardownFuncs->[1]{index} takes precedence for test $testCount.\n"
+					if $Debug;
+				shift @$teardownFuncs;
 			}
+
+			# Get the function and execute it
+			$func = $teardownFuncs->[0]{func} || $teardownFuncs->[0]{test};
+			eval { $func->( $test ) };
 
 			print STDERR "Warning: Teardown failed: $@\n" if $@;
 		}
@@ -584,11 +722,13 @@ sub _prepSuite {
 
 		if ( $testSuite[$i]->{name} =~ m{^set[^a-z]?up$}i ) {
 			push @setupFuncs, splice( @testSuite, $i, 1 );
+			$setupFuncs[ $#setupFuncs ]{index} = $i;
 			redo SCAN;
 		}
 
 		elsif ( $testSuite[$i]->{name} =~ m{^tear[^a-z]?down$}i ) {
 			push @teardownFuncs, splice( @testSuite, $i, 1 );
+			$teardownFuncs[ $#teardownFuncs ]{index} = $i;
 			redo SCAN;
 		}
 	}

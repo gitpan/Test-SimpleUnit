@@ -11,98 +11,164 @@ Authors
 General Information
 -------------------
 
-Test::SimpleUnit is a simplified unit-testing framework intended to be run on
-top of Test::Harness or as a standalone test suite that is easy to create and
-maintain, while still providing a modicum of power.
-
-This is a simplified XUnit-style test framework for creating unit tests to be
+This is a simplified Perl unit-testing framework for creating unit tests to be
 run either standalone or under Test::Harness.
 
-Tests in Test::SimpleUnit consist of one or more test suites, each of which has
-one or more test cases, and setup/teardown functions.
 
-A test suite is an array of test cases which are run, in order, by passing the
-array to the runTests() function.  You may wish to split test suites up into
-separate files under a "t/" directory so they will run under a
-Test::Harness-style "make test".
+Testing
 
-A test case is a hashref which contains two key-value pairs: a name key with the
-name of the test case as the value, and a code reference value under a test
-key. If a test case has the name 'setup' or 'teardown', it is added to a list of
-functions to be run before or after each test case, respectively. The code
-reference value within a setup or teardown test case can optionally be named
-"func" instead of "test" for clarity. If there are both "func" and "test"
+Testing in Test::SimpleUnit is done by running a test suite, either via 'make
+test', which uses the Test::Harness 'test' target written by
+ExtUtils::MakeMaker, or as a standalone script.
+
+If errors occur while running tests via the 'make test' method, you can get more
+verbose output about the test run by adding "TEST_VERBOSE=1" to the end of the
+"make" invocation:
+
+  $ make test TEST_VERBOSE=1
+
+If you want to display only the messages caused by failing assertions, you can
+add a "VERBOSE=1" to the end of the "make" invocation instead:
+
+  $ make test VERBOSE=1
+
+
+Test Suites
+
+A test suite is one or more test cases, each of which tests a specific unit of
+functionality.
+
+
+Test Cases
+
+A test case is a unit of testing which consists of one or more tests, combined
+with setup and teardown functions that make the necessary preparations for
+testing.
+
+You may wish to split test cases up into separate files under a "t/" directory
+so they will run under a Test::Harness-style "make test".
+
+
+Tests
+
+A test is a hashref which contains two key-value pairs: a name key with the name
+of the test as the value, and a code reference under a test key:
+
+  {
+	name => 'This is the name of the test',
+	test => sub { ...testing code... }
+  }
+
+Each test's "test" function can make one or more assertions by using the
+Assertion Functions provided, or can indicate that it or any trailing tests in
+the same test case should be skipped by calling one of the provided Skip
+Functions.
+
+
+Setup and Teardown Functions
+
+If a test has the name 'setup' or 'teardown', it is run before or after each
+test that follows it, respectively. A second or succeeding setup or teardown
+function will supersede any function of the same type which preceded it. This
+allows a test designer to change the setup function as the tests progress. See
+the section for an example of how to use this.
+
+The code reference value within a setup or teardown test case can optionally be
+named "func" instead of "test" for clarity. If there are both "func" and "test"
 key-value pairs in a setup or teardown case, the "test" pair is silently
 ignored.
-
-Each test case's test function can make one or more assertions by using the
-Assertion Functions provided, or can indicate that it or any trailing tests in
-the same suite should be skipped by calling one of the provided Skip Functions.
 
 
 Example
 -------
 
-  use Test::SimpleUnit qw{:functions};
+    use Test::SimpleUnit qw{:functions};
 
-  # If a setup function fails, skip the rest of the tests
-  Test::SimpleUnit->AutoskipFailedSetup( 1 );
+    # If a setup function fails, skip the rest of the tests
+    Test::SimpleUnit::AutoskipFailedSetup( 1 );
 
-  my $LoadedOkay = 0;
-  my $Instance;
+    my $Instance;
+    my $RequireWasOkay = 0;
 
-  my @tests = (
+    my @tests = (
 
-    # Require the module
-    {
-      name => 'require',
-      test => sub {
+      # Require the module
+      {
+        name => 'require',
+        test => sub {
 
-        # Make sure we can load the module to be tested.
-        assertNoException { require MyClass };
+          # Make sure we can load the module to be tested.
+          assertNoException { require MyClass };
 
-        # Try to import some functions, generating a custom error message if it
-        # fails.
-        assertNoException { MyClass->import(':myfuncs') } "Failed to import :myfuncs";
+          # Try to import some functions, generating a custom error message if it
+          # fails.
+          assertNoException { MyClass->import(':myfuncs') } "Failed to import :myfuncs";
 
-        # Make sure calling 'import()' actually imported the functions
-        assertRef 'CODE', *::myfunc{CODE};
-        assertRef 'CODE', *::myotherfunc{CODE};
+          # Make sure calling 'import()' actually imported the functions
+          assertRef 'CODE', *::myfunc{CODE};
+          assertRef 'CODE', *::myotherfunc{CODE};
 
-        # Set the flag to let setup know everything's loaded
-        $LoadedOkay = 1;
+          # Set the flag to let the setup function know the module loaded okay
+          $RequireWasOkay = 1;
+        },
       },
-    },
 
-    # Setup function (this will be run before any tests which follow)
-    {
-      name => 'setup',
-      test => sub {
-        assert $LoadedOkay;
-        assertNoException { $Instance = new MyClass };
+      # Setup function (this will be run before any tests which follow)
+      {
+        name => 'setup',
+        test => sub {
+          # If the previous test didn't finish, it's untestable, so just skip the
+          # rest of the tests
+          skipAll "Module failed to load" unless $RequireWasOkay;
+          $Instance = new MyClass;
+        },
       },
-    },
 
-    # Teardown function (this will be run after any tests which follow)
-    {
-      name => 'teardown',
-      test => sub {
-        undef $Instance;
+      # Teardown function (this will be run after any tests which follow)
+      {
+        name => 'teardown',
+        test => sub {
+          undef $Instance;
+        },
       },
-    },
 
-    # Test the do_something method
-    {
-      name => 'do_something',
-      test => sub {
-          my $rval;
+      # Test the connect() and disconnect() methods
+      {
+        name => 'connect() and disconnect()',
+        test => sub {
+            my $rval;
 
-          assertNoException { $rval = $Instance->do_something };
-          assertEquals 'foo', $rval;
-
-          
+            assertNoException { $rval = $Instance->connect };
+            assert $rval, "Connect failed without error.";
+            assertNoException { $Instance->disconnect };
+        },
       },
-    },
+
+      # Now override the previous setup function with a new one that does
+      # a connect() before each remaining test.
+      {
+        name => 'setup',
+        test => sub {
+            $Instance = new MyClass;
+            $Instance->connect;
+        },
+      }
+
+      # Same thing for teardown/disconnect()
+      {
+        name => 'teardown',
+        test => sub {
+          $Instance->disconnect;
+          undef $Instance;
+        },
+      },
+
+      ...
+
+    );
+
+    runTests( @testSuite );
+
 
 Caveats
 -------
@@ -119,10 +185,11 @@ welcome. Relevant patches are particularly helpful. I may be reached at
 Installation
 ------------
 
- perl Makefile.PL
- make
- make test
- make install
+  $ perl Makefile.PL
+  $ make
+  $ make test
+  (become root)
+  # make install
 
 
 == Legal
@@ -142,7 +209,7 @@ INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 FITNESS FOR A PARTICULAR PURPOSE.
 
 
-Rev: $Id: README,v 1.3 2002/04/22 22:14:18 deveiant Exp $
+Rev: $Id: README,v 1.4 2002/04/25 20:52:49 deveiant Exp $
 
 
 
